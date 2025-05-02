@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAGE VOTING PORTAL</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'Algerian';
+      src: local('Algerian'), url('https://fonts.cdnfonts.com/s/13279/Algerian.woff') format('woff');
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* General background adjustments */
+    body {
+      font-family: 'Algerian', sans-serif;
+      background: linear-gradient(135deg, #407dba, #d9e4ec, #529ec2); /* Light background */
+      background-size: 400% 400%;
+      animation: gradientBG 12s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 15px;
+      position: relative;
+      overflow-x: hidden;
+      filter: none;
+      pointer-events: auto;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.05) 0%, transparent 25%),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.05) 0%, transparent 25%),
+        linear-gradient(to bottom, transparent, rgba(0,0,0,0.3));
+      z-index: 0;
+      animation: bgPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.9); /* Light background */
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(200, 200, 200, 0.5);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+    }
+
+    .header h1 {
+      color: #fff;
+      font-size: 3rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #ff6b6b, #feca57, #1dd1a1, #54a0ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradientText 8s ease infinite, bounceLoop 2s infinite;
+      background-size: 300% 300%;
+    }
+
+    @keyframes gradientText {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes bounceLoop {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .main-content {
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95); /* Light background */
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      border: none;
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.5s forwards;
+      display: none;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .card.active {
+      display: block;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-group {
+      margin-bottom: 20px; /* Increased spacing between form groups */
+      background: rgba(240, 240, 240, 0.95); /* Slightly darker background */
+      border: 1px solid rgba(180, 180, 180, 0.7);
+      border-radius: 8px;
+      padding: 15px; /* Increased padding for better spacing */
+      transition: all 0.3s ease;
+    }
+
+    input, select {
+      width: 100%; /* Full width for better alignment */
+      padding: 14px; /* Increased padding for inputs */
+      background-color: rgba(240, 240, 240, 0.95); /* Slightly darker background */
+      color: #333; /* Darker text for contrast */
+      border: 1px solid rgba(180, 180, 180, 0.7);
+      border-radius: 6px;
+      font-size: 15px; /* Slightly larger font size */
+      transition: all 0.3s ease;
+    }
+
+    input:hover, select:hover {
+      border-color: #5a3db2; /* Darker hover color */
+      box-shadow: 0 0 8px rgba(90, 61, 178, 0.3);
+    }
+
+    input:focus, select:focus {
+      border-color: #5a3db2;
+      box-shadow: 0 0 0 3px rgba(90, 61, 178, 0.4);
+      outline: none;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #5a3db2, #4a90e2); /* Darker gradient for buttons */
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 16px; /* Increased padding for buttons */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(90, 61, 178, 0.3);
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #4a2d91, #3a70c2); /* Darker hover gradient */
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(90, 61, 178, 0.5);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #6e45e2;
+      text-decoration: none;
+      padding: 10px;
+      margin-top: 15px;
+      display: block;
+      text-align: center;
+      font-size: 14px;
+      border: 1px solid rgba(110, 69, 226, 0.3);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+      color: #5d36d1;
+      background: rgba(110, 69, 226, 0.1);
+      border-color: rgba(110, 69, 226, 0.5);
+    }
+
+    .error {
+      color: #e74c3c;
+      font-size: 13px;
+      margin-top: 6px;
+      height: 18px;
+    }
+
+    .success {
+      color: #27ae60;
+      background-color: rgba(39, 174, 96, 0.1);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-align: center;
+      font-size: 15px;
+      display: none;
+      border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+
+    /* Pending Approval Message */
+    .pending {
+      color: #e74c3c; /* Red color */
+      background-color: rgba(231, 76, 60, 0.1); /* Light red background */
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-align: center;
+      font-size: 15px;
+      display: none;
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+    }
+
+    .logout-btn:hover {
+      background: linear-gradient(135deg, #e74c3c, #ff6b6b);
+      transform: translateY(-2px);
+    }
+
+    .loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #6e45e2;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      z-index: 1000;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Need Help Section */
+    .help-section {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    /* Modern Help Button */
+    .help-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+      padding: 0; /* Remove padding for the image */
+    }
+
+    .help-btn img {
+      max-width: 100%; /* Ensure the image scales properly */
+      height: auto;
+    }
+
+    .help-btn:hover {
+      transform: scale(1.1); /* Slight zoom effect on hover */
+    }
+
+    .help-content {
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      background: rgba(255, 255, 255, 0.95); /* Light background */
+      border-radius: 12px;
+      padding: 18px;
+      width: 280px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(200, 200, 200, 0.5);
+      display: none;
+    }
+
+    .help-content h3 {
+      color: #6e45e2;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .help-content p {
+      margin-bottom: 12px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .help-content a {
+      color: #6e45e2;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .help-content a:hover {
+      text-decoration: underline;
+    }
+
+    /* Candidate Registration Button */
+    .candidate-register-btn {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: linear-gradient(135deg, #6e45e2, #88d3ce);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .candidate-register-btn:hover {
+      background: linear-gradient(135deg, #5d36d1, #7bc4bb);
+      transform: translateY(-2px);
+    }
+
+    /* Candidate Registration Form */
+    .candidate-registration-container {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgb(219, 143, 143);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      z-index: 1000;
+    }
+
+    /* Compress Center Box */
+    .main-content .card {
+      max-width: 450px; /* Compress the width */
+      padding: 20px; /* Adjust padding */
+    }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .modal-content .btn-secondary {
+      margin-top: 10px;
+    }
+
+    /* Button Group for Inline Buttons */
+    .button-group {
+      display: flex;
+      gap: 10px; /* Add spacing between buttons */
+      margin-top: 15px;
+    }
+
+    .button-group .btn {
+      flex: 1; /* Ensure buttons are of equal width */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 2.5rem;
+      }
+      
+      .card {
+        padding: 22px;
+      }
+
+      .help-content {
+        width: 250px;
+        right: -20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 25px 10px;
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .card {
+        padding: 20px;
+        margin-bottom: 15px;
+      }
+      
+      input, select, .btn {
+        padding: 12px;
+      }
+
+      .help-section {
+        bottom: 15px;
+        right: 15px;
+      }
+
+      .help-content {
+        width: 220px;
+        right: -15px;
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>SAGE VOTING PORTAL</h1>
+  </div>
+
+  <div class="main-content">
+    <!-- Register Card -->
+    <div class="card active" id="registerPage">
+      <form onsubmit="return register(event)">
+        <div class="form-group">
+          <label for="regEnrollment">Enter Your Enrollment Number:</label>
+          <input type="text" id="regEnrollment" required oninput="this.value = this.value.toUpperCase()" placeholder="BCA24BCA00XXXX">
+          <div id="enrollmentError" class="error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="regEmail">Email Address:</label>
+          <input type="email" id="regEmail" required placeholder="Enter your email address">
+          <div id="emailError" class="error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Create Password:</label>
+          <input type="password" id="regPassword" required minlength="6" placeholder="At least 6 characters">
+          <div id="passwordError" class="error"></div>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="btn">Register</button>
+          <button type="button" class="btn btn-secondary" onclick="showCandidateRegistration()">Register as Candidate</button>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="showLogin()">Already have an account? Login</button>
+      </form>
+    </div>
+
+    <!-- Login Card -->
+    <div class="card" id="loginPage">
+      <form onsubmit="return login(event)">
+        <div class="form-group">
+          <label for="loginEnrollment">Enrollment Number:</label>
+          <input type="text" id="loginEnrollment" required oninput="this.value = this.value.toUpperCase()" placeholder="BCA24BCA00XXXX">
+          <div id="loginError" class="error"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password:</label>
+          <input type="password" id="loginPassword" required placeholder="Enter your password">
+        </div>
+
+        <button type="submit" class="btn">Login</button>
+        <button type="button" class="btn btn-secondary" onclick="showRegister()">Create a new account</button>
+        <button type="button" class="btn btn-secondary" onclick="forgotPassword()">Forgot Password?</button>
+      </form>
+    </div>
+
+    <!-- Voting Card -->
+    <div class="card" id="votingPage">
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      <div id="timer" style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #e74c3c;"></div>
+      <form id="voteForm" onsubmit="return submitVote(event)">
+        <div class="form-group">
+          <label for="voterName">ENTER YOUR FULL NAME:</label>
+          <input type="text" id="voterName" name="Full Name" required placeholder="Your full name">
+        </div>
+
+        <div class="form-group">
+          <label for="voterEnrollment">YOUR ENROLLMENT NUMBER:</label>
+          <input type="text" id="voterEnrollment" name="Enrollment Number" required oninput="this.value = this.value.toUpperCase()" placeholder="BCA24BCA00XXXX">
+        </div>
+
+        <div class="form-group">
+          <label for="candidate">CHOOSE A CANDIDATE:</label>
+          <select name="Candidate" id="candidate" required class="animated-select">
+            <option value="" disabled selected>Select a Candidate</option>
+            <option value="Sachi Mishra">👩 Sachi Mishra</option>
+            <option value="Yash Awasthi">👨 Yash Awasthi</option>
+            <option value="Sneha Singh">👩 Sneha Singh</option>
+            <option value="Suryansh Gaur">👨 Suryansh Gaur</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="security" id="securityLabel">SECURITY CHECK: WHAT IS <span style="color: green;">2 + 9</span>?</label>
+          <input type="text" id="security" name="Security Answer" required placeholder="Enter the sum">
+        </div>
+
+        <div id="voteSuccess" class="success">Your vote has been submitted successfully!</div>
+        <button type="submit" class="btn">SUBMIT VOTE</button>
+      </form>
+    </div>
+
+    <!-- Candidate Registration Modal -->
+    <div class="candidate-registration-modal" id="candidateRegistrationModal" style="display: none;">
+      <div class="candidate-registration-container">
+        <form onsubmit="return registerCandidate(event)">
+          <h3>Register as Candidate</h3>
+          
+
+          <div class="form-group">
+            <label for="candidateName">Full Name:</label>
+            <input type="text" id="candidateName" required placeholder="Enter your full name">
+          </div>
+
+          <div class="form-group">
+            <label for="candidateGender">Gender:</label>
+            <select id="candidateGender" required>
+              <option value="" disabled selected>Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="candidateEmail">Email Address:</label>
+            <input type="email" id="candidateEmail" required placeholder="Enter your email address">
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="btn">Submit</button>
+            <button type="button" class="btn btn-secondary" onclick="hideCandidateRegistration()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Login Card -->
+    <div class="card" id="adminLoginPage">
+      <form onsubmit="return adminLogin(event)">
+        <div class="form-group">
+          <label for="adminUsername">Admin Username:</label>
+          <input type="text" id="adminUsername" required placeholder="Enter admin username">
+        </div>
+
+        <div class="form-group">
+          <label for="adminPassword">Admin Password:</label>
+          <input type="password" id="adminPassword" required placeholder="Enter admin password">
+        </div>
+
+        <div id="adminLoginError" class="error"></div>
+        <button type="submit" class="btn">Login</button>
+      </form>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="card" id="adminDashboardPage">
+      <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
+      <h2>Votes Overview</h2>
+      <div id="votesList">
+        <!-- Votes will be dynamically populated here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Need Help Section -->
+  <div class="help-section">
+    <button class="help-btn" onclick="toggleHelp()">
+      <img src="path/to/need-help-logo.png" alt="Need Help" width="100" height="50">
+    </button>
+    <div class="help-content" id="helpContent">
+      <h3>Need Help?</h3>
+      <p>If you're having trouble with the voting process, please contact our support team:</p>
+      <p>Email: <a href="mailto:support@sagevotingportal.com">support@sagevotingportal.com</a></p>
+      <p>Phone: +91 9635678925</p>
+      <p>Available 9AM - 5PM, Monday to Friday</p>
+    </div>
+  </div>
+
+  <script>
+    const validEnrollments = [
+      "BCA24BCA000091", "BCA24BCA000092", "BCA24BCA000093", "BCA24BCA000094",
+      "BCA24BCA000095", "BCA24BCA000096", "BCA24BCA000097", "BCA24BCA000098",
+      "BCA24BCA000099", "BCA24BCA100100", "BCA24BCA100101", "BCA24BCA000102",
+      "BCA24BCA000103", "BCA24BCA000104", "BCA24BCA000105", "BCA24BCA000106",
+      "BCA24BCA000107", "BCA24BCA000108", "BCA24BCA000109", "BCA24BCA100110",
+      "BCA24BCA000111", "BCA24BCA000112", "BCA24BCA000113", "BCA24BCA000114",
+      "BCA24BCA000115", "BCA24BCA000116", "BCA24BCA000117", "BCA24BCA000118",
+      "BCA24BCA000119", "BCA24BCA000120", "BCA24BCA000121", "BCA24BCA000122",
+      "BCA24BCA000123", "BCA24BCA000124", "BCA24BCA000125", "BCA24BCA000126",
+      "BCA24BCA000127", "BCA24BCA000128", "BCA24BCA000129", "BCA24BCA000130",
+      "BCA24BCA000131", "BCA24BCA000132", "BCA24BCA100133", "BCA24BCA000134",
+      "BCA24BCA000135", "BCA24BCA100136", "BCA24BCA000137", "BCA24BCA000138",
+      "BCA24BCA100139", "BCA24BCA000140", "BCA24BCA100141", "BCA24BCA000142",
+      "BCA24BCA100143", "BCA24BCA000144", "BCA24BCA000145", "BCA24BCA000146",
+      "BCA24BCA000147", "BCA24BCA000148", "BCA24BCA100149", "BCA24BCA000150",
+      "BCA24BCA000151", "BCA24BCA000152", "BCA24BCA000153", "BCA24BCA000154",
+      "BCA24BCA100155", "BCA24BCA000156", "BCA24BCA000157", "BCA24BCA000158",
+      "BCA24BCA000159", "BCA24BCA000160", "BCA24BCA000161", "BCA24BCA000162",
+      "BCA24BCA000163", "BCA24BCA000164", "BCA24BCA000165", "BCA24BCA000166"
+    ];
+
+    // Initialize security question
+    const securityLabel = document.getElementById("securityLabel");
+    let num1 = Math.floor(Math.random() * 10);
+    let num2 = Math.floor(Math.random() * 10);
+    let correctAnswer = num1 + num2;
+    updateSecurityQuestion();
+
+    function updateSecurityQuestion() {
+      num1 = Math.floor(Math.random() * 10);
+      num2 = Math.floor(Math.random() * 10);
+      correctAnswer = num1 + num2;
+      securityLabel.innerHTML = `SECURITY CHECK: WHAT IS <span style="color: green;">${num1} + ${num2}</span>?`;
+    }
+
+    function toggleHelp() {
+      const helpContent = document.getElementById('helpContent');
+      helpContent.style.display = helpContent.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function showLoader() {
+      const loader = document.createElement('div');
+      loader.className = 'loader';
+      document.body.appendChild(loader);
+      return loader;
+    }
+
+    function hideLoader(loader) {
+      if (loader && loader.parentNode) {
+        document.body.removeChild(loader);
+      }
+    }
+
+    function showLogin() {
+      const loader = showLoader();
+      setTimeout(() => {
+        document.getElementById('registerPage').classList.remove('active');
+        document.getElementById('loginPage').classList.add('active');
+        document.getElementById('loginEnrollment').focus();
+        hideLoader(loader);
+      }, 500);
+    }
+
+    function showRegister() {
+      const loader = showLoader();
+      setTimeout(() => {
+        document.getElementById('loginPage').classList.remove('active');
+        document.getElementById('registerPage').classList.add('active');
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('regEnrollment').focus();
+        hideLoader(loader);
+      }, 500);
+    }
+
+    function register(e) {
+      e.preventDefault();
+      const enrollment = document.getElementById('regEnrollment').value.toUpperCase();
+      const password = document.getElementById('regPassword').value;
+      const email = document.getElementById('regEmail').value;
+      const enrollmentError = document.getElementById('enrollmentError');
+      const passwordError = document.getElementById('passwordError');
+      const emailError = document.getElementById('emailError');
+
+      // Reset errors
+      enrollmentError.textContent = '';
+      passwordError.textContent = '';
+      emailError.textContent = '';
+
+      if (!validEnrollments.includes(enrollment)) {
+        enrollmentError.textContent = 'Invalid enrollment number!';
+        return false;
+      }
+
+      if (password.length < 6) {
+        passwordError.textContent = 'Password must be at least 6 characters long!';
+        return false;
+      }
+
+      if (!email.includes('@')) {
+        emailError.textContent = 'Invalid email address!';
+        return false;
+      }
+
+      // Hash the password before storing
+      const hashedPassword = CryptoJS.SHA256(password).toString();
+      localStorage.setItem(enrollment, hashedPassword);
+      
+      alert('Registration successful! Redirecting to login page...');
+      setTimeout(() => {
+        showLogin();
+      }, 1000);
+      
+      return true;
+    }
+
+    function login(e) {
+      e.preventDefault();
+      const enrollment = document.getElementById('loginEnrollment').value.toUpperCase();
+      const password = document.getElementById('loginPassword').value;
+      const loginError = document.getElementById('loginError');
+
+      // Reset error
+      loginError.textContent = '';
+
+      const storedHash = localStorage.getItem(enrollment);
+      const inputHash = CryptoJS.SHA256(password).toString();
+
+      if (storedHash && storedHash === inputHash) {
+        const loader = showLoader();
+        setTimeout(() => {
+          document.getElementById('loginPage').classList.remove('active');
+          document.getElementById('votingPage').classList.add('active');
+          // Pre-fill enrollment in voting form
+          document.getElementById('voterEnrollment').value = enrollment;
+          hideLoader(loader);
+        }, 500);
+      } else {
+        loginError.textContent = 'Invalid enrollment or password.';
+      }
+    }
+
+    function forgotPassword() {
+      const enrollment = prompt("Enter your enrollment number:");
+      if (!enrollment) {
+        alert("Enrollment number is required.");
+        return;
+      }
+
+      const enrollmentUpper = enrollment.toUpperCase();
+      const email = prompt("Enter your registered email address:");
+      if (!email) {
+        alert("Email address is required.");
+        return;
+      }
+
+      // Simulate sending a password reset link
+      console.log(`Password reset link sent to ${email} for enrollment ${enrollmentUpper}`);
+      alert("A password reset link has been sent to your registered email address.");
+    }
+
+    function logout() {
+      const loader = showLoader();
+      setTimeout(() => {
+        document.getElementById('votingPage').classList.remove('active');
+        document.getElementById('loginPage').classList.add('active');
+        // Clear login form
+        document.getElementById('loginEnrollment').value = '';
+        document.getElementById('loginPassword').value = '';
+        hideLoader(loader);
+      }, 500);
+    }
+
+    function submitVote(e) {
+      e.preventDefault();
+      
+      // Verify security question
+      const userAnswer = parseInt(document.getElementById('security').value);
+      if (userAnswer !== correctAnswer) {
+        alert("Incorrect answer to security question. Please try again.");
+        updateSecurityQuestion();
+        return false;
+      }
+
+      // Show success message
+      document.getElementById('voteSuccess').style.display = 'block';
+      
+      // In a real application, you would submit to the server here
+      // For now, we'll simulate a successful submission
+      setTimeout(() => {
+        // Reset form
+        document.getElementById('voteForm').reset();
+        document.getElementById('voteSuccess').style.display = 'none';
+        updateSecurityQuestion();
+      }, 3000);
+      
+      return true;
+    }
+
+    function showCandidateRegistration() {
+      document.getElementById('candidateRegistrationModal').style.display = 'block';
+    }
+
+    function hideCandidateRegistration() {
+      document.getElementById('candidateRegistrationModal').style.display = 'none';
+    }
+
+    function registerCandidate(e) {
+      e.preventDefault();
+      const candidateName = document.getElementById('candidateName').value;
+      const candidateEnrollment = document.getElementById('candidateEnrollment').value.toUpperCase();
+      const candidateEmail = document.getElementById('candidateEmail').value;
+      const candidateGender = document.getElementById('candidateGender').value;
+
+      // Simulate storing candidate data (in a real app, send to the server)
+      console.log(`Candidate Registered: ${candidateName}, ${candidateEnrollment}, ${candidateEmail}, ${candidateGender}`);
+      alert('Registration successful! Admin approval pending.');
+      hideCandidateRegistration();
+
+      return true;
+    }
+
+    function adminLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('adminUsername').value;
+      const password = document.getElementById('adminPassword').value;
+
+      // Simulate admin login (replace with real authentication)
+      if (username === 'admin' && password === 'password') {
+        document.getElementById('adminLoginPage').classList.remove('active');
+        document.getElementById('adminDashboardPage').classList.add('active');
+        loadVotes();
+      } else {
+        document.getElementById('adminLoginError').textContent = 'Invalid admin credentials.';
+      }
+
+      return false;
+    }
+
+    function logoutAdmin() {
+      document.getElementById('adminDashboardPage').classList.remove('active');
+      document.getElementById('adminLoginPage').classList.add('active');
+    }
+
+    function loadVotes() {
+      const votesList = document.getElementById('votesList');
+      votesList.innerHTML = '<p>Loading votes...</p>';
+
+      // Simulate fetching votes (replace with real data)
+      setTimeout(() => {
+        votesList.innerHTML = `
+          <ul>
+            <li>Yash Awasthi: 10 votes</li>
+            <li>Sneha Singh: 8 votes</li>
+            <li>Suryansh Gaur: 5 votes</li>
+          </ul>
+        `;
+      }, 1000);
+    }
+
+    // Initialize animations on page load
+    window.addEventListener('load', () => {
+      const cards = document.querySelectorAll('.card');
+      cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+      });
+    });
+
+    // Clear error messages when user starts typing
+    document.getElementById('regEnrollment').addEventListener('input', () => {
+      document.getElementById('enrollmentError').textContent = '';
+    });
+
+    document.getElementById('regPassword').addEventListener('input', () => {
+      document.getElementById('passwordError').textContent = '';
+    });
+
+    document.getElementById('regEmail').addEventListener('input', () => {
+      document.getElementById('emailError').textContent = '';
+    });
+
+    document.getElementById('loginEnrollment').addEventListener('input', () => {
+      document.getElementById('loginError').textContent = '';
+    });
+
+    // Close help when clicking outside
+    document.addEventListener('click', (e) => {
+      const helpContent = document.getElementById('helpContent');
+      const helpBtn = document.querySelector('.help-btn');
+      
+      if (helpContent.style.display === 'block' && 
+          !helpContent.contains(e.target) && 
+          !helpBtn.contains(e.target)) {
+        helpContent.style.display = 'none';
+      }
+    });
+  </script>
+  <script>
+    let votingTimer;
+
+    function startVotingTimer() {
+      const votingDuration = 2 * 60 * 1000; // 2 minutes in milliseconds
+      const endTime = Date.now() + votingDuration;
+
+      function updateTimer() {
+        const timeLeft = endTime - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(votingTimer);
+          alert("Time is up! Redirecting to login page.");
+          logout(); // Redirect to login page
+          return;
+        }
+
+        const minutes = Math.floor(timeLeft / (60 * 1000));
+        const seconds = Math.floor((timeLeft % (60 * 1000)) / 1000);
+        document.getElementById("timer").textContent = `Time Left: ${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+      }
+
+      updateTimer(); // Initial call to display the timer immediately
+      votingTimer = setInterval(updateTimer, 1000); // Update every second
+    }
+
+    function stopVotingTimer() {
+      clearInterval(votingTimer);
+      document.getElementById("timer").textContent = ""; // Clear the timer display
+    }
+
+    // Call startVotingTimer when the voting page is displayed
+    document.getElementById("votingPage").addEventListener("transitionend", (e) => {
+      if (e.target.classList.contains("active")) {
+        startVotingTimer();
+      }
+    });
+
+    // Stop the timer when the vote is submitted
+    document.getElementById("voteForm").addEventListener("submit", () => {
+      stopVotingTimer();
+    });
+  </script>
+</body>
+</html>
